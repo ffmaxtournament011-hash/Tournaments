@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Identity Hub</title>
+    
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Firebase v8.10.1 SDKs (Highly Stable for Android WebViews & Sketchware) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        :root {
+            /* Default Dark Neon Theme Configuration */
+            --bg-color: #0a0a0f;
+            --container-bg: rgba(18, 18, 29, 0.75);
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+            --accent-primary: #ff007f;
+            --accent-secondary: #00f2ff;
+            --border-glow: rgba(255, 0, 127, 0.2);
+            --link-bg: rgba(255, 255, 255, 0.03);
+            --link-hover: rgba(255, 0, 127, 0.1);
+        }
+
+        /* 5 Premium Themes Engine Settings */
+        [data-theme="dark"] {
+            --bg-color: #0a0a0f;
+            --container-bg: rgba(18, 18, 29, 0.75);
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+            --accent-primary: #ff007f;
+            --accent-secondary: #00f2ff;
+            --border-glow: rgba(255, 0, 127, 0.2);
+            --link-bg: rgba(255, 255, 255, 0.03);
+            --link-hover: rgba(255, 0, 127, 0.1);
+        }
+        [data-theme="white"] {
+            --bg-color: #f8fafc;
+            --container-bg: rgba(255, 255, 255, 0.9);
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --accent-primary: #4f46e5;
+            --accent-secondary: #06b6d4;
+            --border-glow: rgba(79, 70, 229, 0.1);
+            --link-bg: rgba(15, 23, 42, 0.04);
+            --link-hover: rgba(79, 70, 229, 0.08);
+        }
+        [data-theme="dark-gaming"] {
+            --bg-color: #050505;
+            --container-bg: rgba(15, 15, 15, 0.85);
+            --text-main: #00ff66;
+            --text-sub: #888888;
+            --accent-primary: #00ff66;
+            --accent-secondary: #333333;
+            --border-glow: rgba(0, 255, 102, 0.2);
+            --link-bg: rgba(0, 255, 102, 0.02);
+            --link-hover: rgba(0, 255, 102, 0.15);
+        }
+        [data-theme="red-neon"] {
+            --bg-color: #0f0202;
+            --container-bg: rgba(28, 5, 5, 0.8);
+            --text-main: #ff3333;
+            --text-sub: #b37777;
+            --accent-primary: #ff3333;
+            --accent-secondary: #ffaa00;
+            --border-glow: rgba(255, 51, 51, 0.3);
+            --link-bg: rgba(255, 51, 51, 0.03);
+            --link-hover: rgba(255, 51, 51, 0.15);
+        }
+        [data-theme="pink-neon"] {
+            --bg-color: #0d010d;
+            --container-bg: rgba(30, 2, 30, 0.8);
+            --text-main: #ff00ff;
+            --text-sub: #c878c8;
+            --accent-primary: #ff00ff;
+            --accent-secondary: #7700ff;
+            --border-glow: rgba(255, 0, 255, 0.3);
+            --link-bg: rgba(255, 0, 255, 0.03);
+            --link-hover: rgba(255, 0, 255, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Space Grotesk', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            overflow-x: hidden;
+            transition: background-color 0.4s ease;
+        }
+
+        /* ---------------- INTRO SCREEN LOGIC ---------------- */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #050508;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .coding-terminal {
+            width: 100%;
+            max-width: 400px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            color: #00f2ff;
+            text-align: left;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            height: 120px;
+            overflow: hidden;
+        }
+
+        .intro-circle-frame {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 4px solid #ff007f;
+            box-shadow: 0 0 25px #ff007f;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.6);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111;
+        }
+
+        .intro-circle-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .intro-name-text {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #fff;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.6s ease;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        /* ---------------- MAIN WEBSITE CONTAINER ---------------- */
+        #main-hub {
+            width: 100%;
+            max-width: 480px;
+            padding: 15px;
+            opacity: 0;
+            display: none;
+            transition: opacity 0.5s ease;
+        }
+
+        /* TOP NAVBAR */
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 25px;
+            padding: 5px;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-logo-small {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 1px solid var(--accent-primary);
+            object-fit: cover;
+        }
+
+        .admin-name-animated {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+            text-transform: uppercase;
+            animation: textPulse 3s infinite alternate;
+        }
+
+        @keyframes textPulse {
+            0% { opacity: 0.7; text-shadow: 0 0 2px var(--accent-primary); }
+            100% { opacity: 1; text-shadow: 0 0 8px var(--accent-secondary); }
+        }
+
+        /* Themes Button & Menu */
+        .theme-selector-container {
+            position: relative;
+        }
+
+        .theme-trigger-btn {
+            background: var(--link-bg);
+            border: 1px solid var(--border-glow);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .theme-dropdown-menu {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background: #12121d;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            width: 140px;
+            padding: 6px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 100;
+        }
+
+        .theme-option {
+            width: 100%;
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-option:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+
+        /* PROFILE LAYOUT SECTIONS */
+        .identity-card {
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-big-circle-logo {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-primary);
+            box-shadow: 0 0 20px var(--border-glow);
+            object-fit: cover;
+            margin-bottom: 15px;
+            animation: slowRotate 20s infinite linear;
+        }
+
+        @keyframes slowRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .profile-title-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            animation: brandingGlow 2.5s infinite alternate;
+        }
+
+        @keyframes brandingGlow {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.02); text-shadow: 0 0 5px var(--border-glow); }
+        }
+
+        .profile-bio-text {
+            font-size: 13px;
+            color: var(--text-sub);
+            max-width: 320px;
+            line-height: 1.5;
+        }
+
+        /* LINKS ROW NODE STRUCTURE */
+        .links-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .social-redirect-node {
+            display: flex;
+            align-items: center;
+            background: var(--link-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .social-redirect-node:hover {
+            transform: translateY(-2px);
+            background: var(--link-hover);
+            border-color: var(--accent-primary);
+            box-shadow: 0 5px 15px var(--border-glow);
+        }
+
+        .node-left-icon-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            color: var(--accent-secondary);
+            margin-right: 15px;
+        }
+
+        .node-meta-content {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .node-title-platform {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .node-subtitle-username {
+            font-size: 11px;
+            color: var(--text-sub);
+            margin-top: 2px;
+            font-family: 'Fira Code', monospace;
+            opacity: 0.8;
+        }
+
+        .node-arrow-right {
+            margin-left: auto;
+            font-size: 14px;
+            color: var(--text-sub);
+            opacity: 0.5;
+            transition: transform 0.2s;
+        }
+
+        .social-redirect-node:hover .node-arrow-right {
+            transform: translateX(3px);
+            opacity: 1;
+            color: var(--accent-primary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SYNTHESIZER SOUND ENGINE -->
+    <script>
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playTypewriter() {
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            },
+            playBoom() {
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.6);
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.6);
+            },
+            playClick() {
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.03);
+            }
+        };
+    </script>
+
+    <!-- 1. CODING INTRO BOOT SCREEN LAYER -->
+    <div id="intro-overlay">
+        <div class="coding-terminal" id="terminal-text"></div>
+        <div class="intro-circle-frame" id="intro-frame">
+            <img id="intro-display-image" src="" alt="Identity Reveal">
+        </div>
+        <div class="intro-name-text" id="intro-display-name">INITIALIZING ENGINE...</div>
+    </div>
+
+    <!-- 2. LIVE WEB CORE LINKER CONTAINER -->
+    <div id="main-hub">
+        <!-- HEADER PROFILE BLOCK -->
+        <div class="top-navbar">
+            <div class="nav-left">
+                <img class="admin-logo-small" id="nav-small-logo" src="" alt="Small Profile">
+                <span class="admin-name-animated" id="nav-brand-name">LOADING CONTROL...</span>
+            </div>
+            
+            <div class="theme-selector-container">
+                <button class="theme-trigger-btn" onclick="toggleThemeDropdown()">
+                    <i class="fas fa-palette"></i> Themes
+                </button>
+                <div class="theme-dropdown-menu" id="themeMenu">
+                    <button class="theme-option" onclick="changeTheme('dark')"><i class="fas fa-moon"></i> Dark Base</button>
+                    <button class="theme-option" onclick="changeTheme('white')"><i class="fas fa-sun"></i> Light Clean</button>
+                    <button class="theme-option" onclick="changeTheme('dark-gaming')"><i class="fas fa-gamepad"></i> Game Matrix</button>
+                    <button class="theme-option" onclick="changeTheme('red-neon')"><i class="fas fa-radiation"></i> Red Neon</button>
+                    <button class="theme-option" onclick="changeTheme('pink-neon')"><i class="fas fa-wand-magic-sparkles"></i> Pink Glow</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- IDENTITY PORTRAIT COMPONENT -->
+        <div class="identity-card">
+            <img class="main-big-circle-logo" id="hub-main-logo" src="" alt="Main Corporate Node">
+            <h2 class="profile-title-text" id="hub-profile-name">System Dynamic</h2>
+            <p class="profile-bio-text" id="hub-profile-bio">Synchronizing real-time environment configurations from database infrastructure clusters...</p>
+        </div>
+
+        <!-- DYNAMIC ROUTER LINKS ATTACHMENT SECTION -->
+        <div class="links-wrapper" id="hub-links-container">
+            <!-- Dynamic Social nodes populate here automatically -->
+        </div>
+    </div>
+
+    <!-- 3. FIREBASE CONNECTOR SYSTEM CONFIGURATION LAYER -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuoCPltTfHZgYowMb4zjLJsG9e1vf-OP4",
+            authDomain: "flash-da0c2.firebaseapp.com",
+            databaseURL: "https://flash-da0c2-default-rtdb.firebaseio.com",
+            projectId: "flash-da0c2",
+            storageBucket: "flash-da0c2.firebasestorage.app",
+            messagingSenderId: "41398829781",
+            appId: "1:41398829781:web:21d9937203330b59b8985c",
+            measurementId: "G-5CWN5W90MJ"
+        };
+
+        // Initialize Firebase v8.10.1 connection safely
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // Application Real-time Sync Engine Listener Flow
+        function connectAndFetchLiveProfile() {
+            db.collection("hub_settings").doc("live_profile")
+                .onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const cloudSnapshot = doc.data();
+                        console.log("Database Node Streaming Active:", cloudSnapshot);
+                        mapDatabaseToWebInterface(cloudSnapshot);
+                    } else {
+                        console.warn("No baseline document discovered. Please sync from Admin panel.");
+                    }
+                }, (error) => {
+                    console.error("Firestore cloud socket listener broken:", error);
+                });
+        }
+
+        // Mapping Data Engine onto View Document Node Elements
+        function mapDatabaseToWebInterface(data) {
+            if(data.introImg) document.getElementById('intro-display-image').src = data.introImg;
+            document.getElementById('intro-display-name').innerText = data.introName || "SYSTEM ACCESS GRANTED";
+            
+            document.getElementById('nav-small-logo').src = data.logoImg;
+            document.getElementById('nav-brand-name').innerText = data.profileName;
+            document.getElementById('hub-main-logo').src = data.logoImg;
+            document.getElementById('hub-profile-name').innerText = data.profileName;
+            document.getElementById('hub-profile-bio').innerText = data.profileBio;
+
+            const wrapper = document.getElementById('hub-links-container');
+            wrapper.innerHTML = "";
+            
+            if (data.links && Array.isArray(data.links)) {
+                data.links.forEach(link => {
+                    let iconClass = "fas fa-link";
+                    if(link.type === "YouTube") iconClass = "fab fa-youtube";
+                    if(link.type === "Instagram") iconClass = "fab fa-instagram";
+                    if(link.type === "Discord") iconClass = "fab fa-discord";
+                    if(link.type === "Twitter") iconClass = "fab fa-x-twitter";
+                    if(link.type === "GitHub") iconClass = "fab fa-github";
+                    if(link.type === "Twitch") iconClass = "fab fa-twitch";
+
+                    const anchorNode = document.createElement('a');
+                    anchorNode.className = "social-redirect-node";
+                    anchorNode.href = link.url;
+                    anchorNode.target = "_blank";
+                    anchorNode.onclick = () => AudioEngine.playClick();
+                    anchorNode.innerHTML = `
+                        <div class="node-left-icon-box">
+                            <i class="${iconClass}"></i>
+                        </div>
+                        <div class="node-meta-content">
+                            <span class="node-title-platform">${link.type}</span>
+                            <span class="node-subtitle-username">${link.username}</span>
+                        </div>
+                        <i class="fas fa-chevron-right node-arrow-right"></i>
+                    `;
+                    wrapper.appendChild(anchorNode);
+                });
+            }
+        }
+
+        // Terminal Boot Coding Sequence Simulation Logic
+        const scripts = [
+            "> Initializing secure server data synchronization...",
+            "> Connection secured via cloud socket network tunnels...",
+            "> Fetching real-time database payloads from cluster...",
+            "> Booting high-fidelity audio synthesizer nodes...",
+            "> Executing premium interface graphical vectors..."
+        ];
+
+        let line = 0, char = 0;
+        const terminalBox = document.getElementById('terminal-text');
+
+        function startTypingTerminal() {
+            if (line < scripts.length) {
+                let textLine = scripts[line];
+                if (char < textLine.length) {
+                    terminalBox.innerHTML += textLine.charAt(char);
+                    char++;
+                    AudioEngine.playTypewriter();
+                    setTimeout(startTypingTerminal, 25);
+                } else {
+                    terminalBox.innerHTML += "<br/>";
+                    line++;
+                    char = 0;
+                    setTimeout(startTypingTerminal, 150);
+                }
+            } else {
+                setTimeout(triggerIntroAnimations, 250);
+            }
+        }
+
+        function triggerIntroAnimations() {
+            AudioEngine.playBoom();
+            const frame = document.getElementById('intro-frame');
+            const brandingText = document.getElementById('intro-display-name');
+            
+            frame.style.opacity = "1";
+            frame.style.transform = "scale(1) rotate(360deg)";
+            
+            setTimeout(() => {
+                brandingText.style.opacity = "1";
+                brandingText.style.transform = "translateY(0)";
+                setTimeout(switchOverlayToDashboard, 2200);
+            }, 600);
+        }
+
+        function switchOverlayToDashboard() {
+            const overlay = document.getElementById('intro-overlay');
+            const applicationHub = document.getElementById('main-hub');
+            
+            overlay.style.transition = "opacity 0.6s cubic-bezier(0.1, 0.9, 0.2, 1)";
+            overlay.style.opacity = "0";
+            
+            applicationHub.style.display = "block";
+            setTimeout(() => {
+                overlay.remove();
+                applicationHub.style.opacity = "1";
+            }, 600);
+        }
+
+        // Bootstrapping event listener attachment setup
+        window.addEventListener('DOMContentLoaded', () => {
+            connectAndFetchLiveProfile();
+
+            // Handle safety touch gesture check requirements to permit synthesized sounds
+            document.getElementById('intro-overlay').addEventListener('click', function gestureTrigger() {
+                document.getElementById('intro-overlay').removeEventListener('click', gestureTrigger);
+                startTypingTerminal();
+            }, { once: true });
+            
+            terminalBox.innerHTML = "<span style='color: #ff007f;'>[ RULES CLICK  ]</span><br/><br/>";
+        });
+
+        // Interface Theme Actions Controllers
+        window.toggleThemeDropdown = function() {
+            AudioEngine.playClick();
+            const menu = document.getElementById('themeMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        };
+
+        window.changeTheme = function(themeName) {
+            AudioEngine.playClick();
+            document.documentElement.setAttribute('data-theme', themeName);
+            document.getElementById('themeMenu').style.display = 'none';
+        };
+    </script>
+</body>
+</html>
